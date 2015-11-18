@@ -3,6 +3,8 @@
 namespace Jackalope\Version;
 
 use ArrayIterator;
+use Jackalope\Property;
+use PHPCR\NodeInterface;
 use PHPCR\Version\VersionHistoryInterface;
 use PHPCR\Version\VersionInterface;
 use PHPCR\Version\VersionException;
@@ -33,6 +35,12 @@ class VersionHistory extends Node implements VersionHistoryInterface
      * @var array
      */
     protected $linearVersions = null;
+
+    /**
+     * Cache of the version labels.
+     * @var array
+     */
+    protected $versionLabels = null;
 
     /**
      * {@inheritDoc}
@@ -166,9 +174,11 @@ class VersionHistory extends Node implements VersionHistoryInterface
      */
     public function getVersionByLabel($label)
     {
-        // @codeCoverageIgnoreStart
-        throw new NotImplementedException();
-        // @codeCoverageIgnoreEnd
+        if($this->hasVersionLabel($label)) {
+            return $this->versionLabels[$label];
+        } else {
+            throw new VersionException("No label '$label'");
+        }
     }
 
     /**
@@ -178,9 +188,13 @@ class VersionHistory extends Node implements VersionHistoryInterface
      */
     public function addVersionLabel($versionName, $label, $moveLabel)
     {
-        // @codeCoverageIgnoreStart
-        throw new NotImplementedException();
-        // @codeCoverageIgnoreEnd
+        $version = $this->getVersion($versionName);
+        $path = $version->getPath();
+
+        $this->objectManager->addLabel($path,$label,$moveLabel);
+        $this->versionLabels[$label] = $version;
+
+
     }
 
     /**
@@ -190,9 +204,13 @@ class VersionHistory extends Node implements VersionHistoryInterface
      */
     public function removeVersionLabel($label)
     {
-        // @codeCoverageIgnoreStart
-        throw new NotImplementedException();
-        // @codeCoverageIgnoreEnd
+        if($this->hasVersionLabel($label)) {
+            $version = $this->versionLabels[$label];
+            $this->objectManager->removeLabel($version->getPath(),$label);
+            unset($this->versionLabels[$label]);
+        } else {
+            throw new VersionException("No label '$label'");
+        }
     }
 
     /**
@@ -202,9 +220,9 @@ class VersionHistory extends Node implements VersionHistoryInterface
      */
     public function hasVersionLabel($label, $version = null)
     {
-        // @codeCoverageIgnoreStart
-        throw new NotImplementedException();
-        // @codeCoverageIgnoreEnd
+        $labels = $this->getVersionLabels($version);
+
+        return in_array($label,$labels);
     }
 
     /**
@@ -214,9 +232,47 @@ class VersionHistory extends Node implements VersionHistoryInterface
      */
     public function getVersionLabels($version = null)
     {
-        // @codeCoverageIgnoreStart
-        throw new NotImplementedException();
-        // @codeCoverageIgnoreEnd
+        if(is_null($this->versionLabels)) {
+
+            $this->versionLabels = array();
+            $node = $this->getNode('jcr:versionLabels');
+            foreach($node->getProperties() as $property) {
+                /* @var Property $property */
+                if($property->getName()!= "jcr:primaryType") {
+                    $name = $property->getName();
+                    $value = $this->objectManager->getNodeByIdentifier($property->getValue()->getIdentifier(), 'Version\\Version');
+                    $this->versionLabels[$name] = $value;
+                }
+            }
+        }
+
+        if($version === null) {
+            return array_keys($this->versionLabels);
+        } else {
+            $versions = $this->getAllVersions();
+            $versionIsInHistory = false;
+
+            foreach($versions as $versionCheck) {
+                /* @var VersionInterface $versionCheck */
+                if($versionCheck->getIdentifier() == $version->getIdentifier()) {
+                    $versionIsInHistory = true;
+                }
+            }
+
+            if(!$versionIsInHistory) {
+                throw new VersionException('version not in history');
+            }
+            $result = array();
+            foreach($this->versionLabels as $label => $labelVersion) {
+                /* @var VersionInterface $labelVersion */
+                if($labelVersion->getIdentifier() == $version->getIdentifier()) {
+                    $result[] = $label;
+                }
+            }
+
+            return $result;
+        }
+
     }
 
     /**
@@ -236,6 +292,7 @@ class VersionHistory extends Node implements VersionHistoryInterface
         if (!is_null($this->versions)) {
             unset($this->versions[$versionName]);
         }
+
     }
 
     /**

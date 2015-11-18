@@ -970,6 +970,18 @@ class ObjectManager
         $this->transport->checkoutItem($absPath); //FIXME: what about pending move operations?
     }
 
+
+    public function addLabel($path, $label, $move)
+    {
+        $this->transport->addLabel($path, $label, $move);
+    }
+
+
+    public function removeLabel($path, $label)
+    {
+        $this->transport->removeLabel($path, $label);
+    }
+
     /**
      * Restore the node at $nodePath to the version at $versionPath
      *
