@@ -174,11 +174,11 @@ class VersionHistory extends Node implements VersionHistoryInterface
      */
     public function getVersionByLabel($label)
     {
-        if (!$this->hasVersionLabel($label)) {
+        if ($this->hasVersionLabel($label)) {
+            return $this->versionLabels[$label];
+        } else {
             throw new VersionException("No label '$label'");
         }
-
-        return $this->versionLabels[$label];
     }
 
     /**
@@ -192,7 +192,7 @@ class VersionHistory extends Node implements VersionHistoryInterface
         $version = $this->getVersion($versionName);
         $path = $version->getPath();
 
-        $this->objectManager->addVersionLabel($path, $label, $moveLabel);
+        $this->objectManager->addLabel($path, $label, $moveLabel);
         $this->versionLabels[$label] = $version;
     }
 
@@ -203,13 +203,13 @@ class VersionHistory extends Node implements VersionHistoryInterface
      */
     public function removeVersionLabel($label)
     {
-        if (!$this->hasVersionLabel($label)) {
+        if ($this->hasVersionLabel($label)) {
+            $version = $this->versionLabels[$label];
+            $this->objectManager->removeLabel($version->getPath(), $label);
+            unset($this->versionLabels[$label]);
+        } else {
             throw new VersionException("No label '$label'");
         }
-
-        $version = $this->versionLabels[$label];
-        $this->objectManager->removeVersionLabel($version->getPath(), $label);
-        unset($this->versionLabels[$label]);
     }
 
     /**
@@ -232,49 +232,53 @@ class VersionHistory extends Node implements VersionHistoryInterface
     public function getVersionLabels($version = null)
     {
         $this->initVersionLabels();
-        if ($version === null) {
+        if($version === null) {
             return array_keys($this->versionLabels);
-        } else {
-            $versions = $this->getAllVersions();
-            $versionIsInHistory = false;
-
-            foreach ($versions as $versionCheck) {
-                /* @var VersionInterface $versionCheck */
-                if ($versionCheck->getIdentifier() == $version->getIdentifier()) {
-                    $versionIsInHistory = true;
-                }
-            }
-
-            if (!$versionIsInHistory) {
-                throw new VersionException(sprintf('Version %s not found in history of %s', $version->getIdentifier(), $this->getPath()));
-            }
-            $result = array();
-            foreach ($this->versionLabels as $label => $labelVersion) {
-                /* @var VersionInterface $labelVersion */
-                if ($labelVersion->getIdentifier() == $version->getIdentifier()) {
-                    $result[] = $label;
-                }
-            }
-
-            return $result;
         }
+
+        $versions = $this->getAllVersions();
+        $versionIsInHistory = false;
+
+        foreach ($versions as $versionCheck) {
+            /* @var VersionInterface $versionCheck */
+            if ($versionCheck->getIdentifier() == $version->getIdentifier()) {
+                $versionIsInHistory = true;
+                break;
+            }
+        }
+
+        if (!$versionIsInHistory) {
+            throw new VersionException(sprintf('Version %s not found in history of %s', $version->getIdentifier(), $this->getPath()));
+        }
+
+        $result = array();
+        foreach ($this->versionLabels as $label => $labelVersion) {
+            /* @var VersionInterface $labelVersion */
+            if ($labelVersion->getIdentifier() == $version->getIdentifier()) {
+                $result[] = $label;
+            }
+        }
+
+        return $result;
     }
 
     /**
      * This method fetches all version labels, if the cache array is not initialized yet.
      */
-    protected function initVersionLabels()
+    private function initVersionLabels()
     {
-        if (is_null($this->versionLabels)) {
-            $this->versionLabels = array();
-            $node = $this->getNode('jcr:versionLabels');
-            foreach ($node->getProperties() as $property) {
-                /* @var Property $property */
-                if ($property->getName()!= "jcr:primaryType") {
-                    $name = $property->getName();
-                    $value = $this->objectManager->getNodeByIdentifier($property->getValue()->getIdentifier(), 'Version\\Version');
-                    $this->versionLabels[$name] = $value;
-                }
+        if(!is_null($this->versionLabels)) {
+            return;
+        }
+
+        $this->versionLabels = array();
+        $node = $this->getNode('jcr:versionLabels');
+        foreach($node->getProperties() as $property) {
+            /* @var Property $property */
+            if($property->getName()!= "jcr:primaryType") {
+                $name = $property->getName();
+                $value = $this->objectManager->getNodeByIdentifier($property->getValue()->getIdentifier(), 'Version\\Version');
+                $this->versionLabels[$name] = $value;
             }
         }
     }
