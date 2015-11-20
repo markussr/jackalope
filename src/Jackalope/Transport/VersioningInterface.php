@@ -83,5 +83,4 @@ interface VersioningInterface extends TransportInterface
      * @param string $label the label, that has to be removed.
      */
     public function removeVersionLabel($versionPath, $label);
-
 }
