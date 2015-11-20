@@ -188,13 +188,12 @@ class VersionHistory extends Node implements VersionHistoryInterface
      */
     public function addVersionLabel($versionName, $label, $moveLabel)
     {
+        $this->initVersionLabels();
         $version = $this->getVersion($versionName);
         $path = $version->getPath();
 
         $this->objectManager->addLabel($path,$label,$moveLabel);
         $this->versionLabels[$label] = $version;
-
-
     }
 
     /**
@@ -232,20 +231,7 @@ class VersionHistory extends Node implements VersionHistoryInterface
      */
     public function getVersionLabels($version = null)
     {
-        if(is_null($this->versionLabels)) {
-
-            $this->versionLabels = array();
-            $node = $this->getNode('jcr:versionLabels');
-            foreach($node->getProperties() as $property) {
-                /* @var Property $property */
-                if($property->getName()!= "jcr:primaryType") {
-                    $name = $property->getName();
-                    $value = $this->objectManager->getNodeByIdentifier($property->getValue()->getIdentifier(), 'Version\\Version');
-                    $this->versionLabels[$name] = $value;
-                }
-            }
-        }
-
+        $this->initVersionLabels();
         if($version === null) {
             return array_keys($this->versionLabels);
         } else {
@@ -273,6 +259,26 @@ class VersionHistory extends Node implements VersionHistoryInterface
             return $result;
         }
 
+    }
+
+    /**
+     * This method fetches all version labels, if the cache array is not initialized yet.
+     */
+    protected function initVersionLabels()
+    {
+        if(is_null($this->versionLabels)) {
+
+            $this->versionLabels = array();
+            $node = $this->getNode('jcr:versionLabels');
+            foreach($node->getProperties() as $property) {
+                /* @var Property $property */
+                if($property->getName()!= "jcr:primaryType") {
+                    $name = $property->getName();
+                    $value = $this->objectManager->getNodeByIdentifier($property->getValue()->getIdentifier(), 'Version\\Version');
+                    $this->versionLabels[$name] = $value;
+                }
+            }
+        }
     }
 
     /**
@@ -304,5 +310,6 @@ class VersionHistory extends Node implements VersionHistoryInterface
     {
         $this->versions = null;
         $this->linearVersions = null;
+        $this->versionLabels = null;
     }
 }
