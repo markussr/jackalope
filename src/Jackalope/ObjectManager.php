@@ -970,16 +970,20 @@ class ObjectManager
         $this->transport->checkoutItem($absPath); //FIXME: what about pending move operations?
     }
 
-
-    public function addLabel($path, $label, $move)
+    /**
+     * @see Jackalope\Transport\VersioningInterface::addVersionLabel
+     */
+    public function addVersionLabel($path, $label, $moveLabel)
     {
-        $this->transport->addLabel($path, $label, $move);
+        $this->transport->addVersionLabel($path, $label, $moveLabel);
     }
 
-
-    public function removeLabel($path, $label)
+    /**
+     * @see Jackalope\Transport\VersioningInterface::addVersionLabel
+     */
+    public function removeVersionLabel($path, $label)
     {
-        $this->transport->removeLabel($path, $label);
+        $this->transport->removeVersionLabel($path, $label);
     }
 
     /**

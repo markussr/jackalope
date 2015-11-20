@@ -205,7 +205,7 @@ class VersionManager implements VersionManagerInterface
     {
         $vh = $this->getVersionHistory($absPath);
         $version = $vh->getVersionByLabel($versionLabel);
-        $this->restore($removeExisting,$version);
+        $this->restore($removeExisting, $version);
     }
 
     /**
