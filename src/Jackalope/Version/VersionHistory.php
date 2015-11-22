@@ -232,7 +232,7 @@ class VersionHistory extends Node implements VersionHistoryInterface
     public function getVersionLabels($version = null)
     {
         $this->initVersionLabels();
-        if($version === null) {
+        if ($version === null) {
             return array_keys($this->versionLabels);
         }
 
@@ -267,15 +267,15 @@ class VersionHistory extends Node implements VersionHistoryInterface
      */
     private function initVersionLabels()
     {
-        if(!is_null($this->versionLabels)) {
+        if (!is_null($this->versionLabels)) {
             return;
         }
 
         $this->versionLabels = array();
         $node = $this->getNode('jcr:versionLabels');
-        foreach($node->getProperties() as $property) {
+        foreach ($node->getProperties() as $property) {
             /* @var Property $property */
-            if($property->getName()!= "jcr:primaryType") {
+            if ($property->getName()!= "jcr:primaryType") {
                 $name = $property->getName();
                 $value = $this->objectManager->getNodeByIdentifier($property->getValue()->getIdentifier(), 'Version\\Version');
                 $this->versionLabels[$name] = $value;
